@@ -39,11 +39,11 @@
 #include <iterator>
 #include <limits>
 
-#include "fibheap.h"
-#include "HeapNode.h"
+#include "FibHeap.h"
 
 namespace FGC
 {
+
 const float         DIST_INF = std::numeric_limits<float>::max();
 const float         DIST_EPSILON = 1e-3f;
 const unsigned char NNGBH = 26;
@@ -86,9 +86,9 @@ private:
   std::vector<int>           m_indOff;
   std::vector<unsigned char> m_NBSIZE;
 
-  FibHeap               m_heap;
-  std::vector<HeapNode> m_hpNodes;
-  bool                  m_bSegInitialized{ false };
+  FibHeap                  m_heap;
+  std::vector<FibHeapNode> m_hpNodes;
+  bool                     m_bSegInitialized{ false };
 };
 } // end namespace FGC
 

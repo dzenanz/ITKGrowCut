@@ -46,6 +46,9 @@ namespace itk
  *
  * Original code was located at: https://github.com/ljzhu/FastGrowCut
  *
+ * Updated code was adapted from Slicer:
+ * https://github.com/Slicer/Slicer/blob/1a692bf36e9c99c47661fbf5fdba0fd3c3e72f95/Modules/Loadable/Segmentations/Logic/vtkImageGrowCutSegment.cxx
+ *
  * \ingroup GrowCut
  *
  */
@@ -102,6 +105,16 @@ public:
     return static_cast<const LabelImageType *>(this->ProcessObject::GetInput(1));
   }
 
+  /// Set mask volume (input 2). Optional.
+  /// If this volume is specified then only those regions outside the mask (where mask has zero value)
+  /// will be included in the segmentation result. Regions outside the mask will not be used
+  /// for region growing either (growing will not start from or cross through masked region).
+  void
+  SetMaskImage(const LabelImageType * maskImage)
+  {
+    this->SetNthInput(2, const_cast<LabelImageType *>(maskImage));
+  }
+
   void
   GenerateData() override;
 
@@ -138,6 +151,7 @@ private:
   std::shared_ptr<InternalFGCType> m_fastGC = std::make_shared<InternalFGCType>();
 
   bool m_InitializationFlag = false;
+  double DistancePenalty = 0.0 ;
 };
 } // namespace itk
 

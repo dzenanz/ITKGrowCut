@@ -72,28 +72,22 @@ public:
   itkTypeMacro(FastGrowCut, ImageToImageFilter);
 
   using InputImageType = TInputImage;
-  using InputImagePointer = typename InputImageType::Pointer;
-  using InputImageRegionType = typename InputImageType::RegionType;
-  using InputImagePixelType = typename InputImageType::PixelType;
-  using IndexType = typename InputImageType::IndexType;
-  using SizeType = typename InputImageType::SizeType;
+  using IntensityPixelType = typename InputImageType::PixelType;
 
   using LabelImageType = TLabelImage;
   using LabelPixelType = typename LabelImageType::PixelType;
-  using LabelImagePointer = typename LabelImageType::Pointer;
-  using LabelImageRegionType = typename LabelImageType::RegionType;
-  using LabelImagePixelType = typename LabelImageType::PixelType;
 
   using MaskImageType = TMaskImage;
   using MaskPixelType = typename MaskImageType::PixelType;
 
-  using SeedsContainerType = std::vector<IndexType>;
+  using RegionType = typename InputImageType::RegionType;
+  using IndexType = typename InputImageType::IndexType;
+  using SizeType = typename InputImageType::SizeType;
+  using SpacingType = typename InputImageType::SpacingType;
 
-  using InputRealType = typename NumericTraits<InputImagePixelType>::RealType;
+  //using SeedsContainerType = std::vector<IndexType>;
 
-  /** Has internal data structure been initialized? */
-  itkSetMacro(InitializationFlag, bool);
-  itkGetMacro(InitializationFlag, bool);
+  //using InputRealType = typename NumericTraits<IntensityPixelType>::RealType;
 
 
   /** Reset to initial state. This forces full recomputation of the result label volume.
@@ -151,9 +145,9 @@ public:
   static_assert(TInputImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
   static_assert(TLabelImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
   static_assert(TMaskImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
-  itkConceptMacro(InputHasNumericTraitsCheck, (Concept::HasNumericTraits<InputImagePixelType>));
-  itkConceptMacro(OutputHasNumericTraitsCheck, (Concept::HasNumericTraits<LabelImagePixelType>));
-  itkConceptMacro(MaskHasNumericTraitsCheck, (Concept::HasNumericTraits<MaskImagePixelType>));
+  itkConceptMacro(InputHasNumericTraitsCheck, (Concept::HasNumericTraits<IntensityPixelType>));
+  itkConceptMacro(OutputHasNumericTraitsCheck, (Concept::HasNumericTraits<LabelPixelType>));
+  itkConceptMacro(MaskHasNumericTraitsCheck, (Concept::HasNumericTraits<MaskPixelType>));
   // End concept checking
 #endif
 
@@ -161,9 +155,9 @@ protected:
   FastGrowCut() = default;
   ~FastGrowCut() = default;
 
-  constexpr NodeKeyValueType DIST_INF = std::numeric_limits<float>::max();
-  constexpr NodeKeyValueType DIST_EPSILON = 1e-3f;
-  constexpr unsigned char    NNGBH = 26;
+  static constexpr NodeKeyValueType DIST_INF = std::numeric_limits<float>::max();
+  static constexpr NodeKeyValueType DIST_EPSILON = 1e-3f;
+  static constexpr unsigned char    NNGBH = 26;
   using DistancePixelType = float;
   using DistanceImageType = itk::Image<DistancePixelType, 3>;
 
@@ -175,17 +169,11 @@ protected:
   void
   EnlargeOutputRequestedRegion(DataObject * output) override;
 
-  using InternalFGCType = FGC::FastGrowCut<InputImagePixelType, LabelPixelType>;
-
-
   bool
-  InitializationAHP(double distancePenalty);
+  InitializationAHP();
 
   void
   DijkstraBasedClassificationAHP();
-
-  bool
-  ExecuteGrowCut(double distancePenalty);
 
 private:
   typename DistanceImageType::Pointer m_DistanceVolume = DistanceImageType::New();

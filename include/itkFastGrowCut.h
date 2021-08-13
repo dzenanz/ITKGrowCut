@@ -37,7 +37,7 @@ namespace itk
  * Computational complexity is V*log(V), where V is number of voxels in the region to be segmented.
  *
  * Based on the method first introduced by:
- * 
+ *
  * Liangjia Zhu, Ivan Kolesov, Yi Gao, Ron Kikinis, Allen Tannenbaum.
  * An Effective Interactive Medical Image Segmentation Method Using Fast GrowCut
  * International Conference on Medical Image Computing and Computer Assisted Intervention (MICCAI),
@@ -87,8 +87,24 @@ public:
 
   using InputRealType = typename NumericTraits<InputImagePixelType>::RealType;
 
+  /** Has internal data structure been initialized? */
   itkSetMacro(InitializationFlag, bool);
   itkGetMacro(InitializationFlag, bool);
+
+
+  /** Reset to initial state. This forces full recomputation of the result label volume.
+   * This method has to be called if intensity volume changes or if seeds are deleted after initial computation.
+   */
+  void
+  Reset();
+
+  /** Spatial regularization factor, which can force growing in nearby regions.
+   * For each physical unit distance, this much intensity level difference is simulated.
+   * Zero by default, meaning spatial distance does not play a role in the region growing,
+   * only intensity value similarity.
+   */
+  itkSetMacro(DistancePenalty, double);
+  itkGetMacro(DistancePenalty, double);
 
   void
   PrintSelf(std::ostream & os, Indent indent) const override;
@@ -105,14 +121,21 @@ public:
     return static_cast<const LabelImageType *>(this->ProcessObject::GetInput(1));
   }
 
-  /// Set mask volume (input 2). Optional.
-  /// If this volume is specified then only those regions outside the mask (where mask has zero value)
-  /// will be included in the segmentation result. Regions outside the mask will not be used
-  /// for region growing either (growing will not start from or cross through masked region).
+  /** Set mask volume (input 2). Optional.
+   *
+   * If this volume is specified then only those regions outside the mask (where mask has zero value)
+   * will be included in the segmentation result. Regions outside the mask will not be used
+   * for region growing either (growing will not start from or cross through masked region).
+   */
   void
   SetMaskImage(const LabelImageType * maskImage)
   {
     this->SetNthInput(2, const_cast<LabelImageType *>(maskImage));
+  }
+  const LabelImageType *
+  GetMaskImage()
+  {
+    return static_cast<const LabelImageType *>(this->ProcessObject::GetInput(2));
   }
 
   void
@@ -150,8 +173,8 @@ private:
 
   std::shared_ptr<InternalFGCType> m_fastGC = std::make_shared<InternalFGCType>();
 
-  bool m_InitializationFlag = false;
-  double DistancePenalty = 0.0 ;
+  bool   m_InitializationFlag = false;
+  double m_DistancePenalty = 0.0;
 };
 } // namespace itk
 

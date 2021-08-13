@@ -53,6 +53,17 @@ template <typename SrcPixelType, typename LabPixelType>
 class FastGrowCut
 {
 public:
+  ~FastGrowCut() { this->Reset(); }
+
+  void
+  Reset();
+
+  void
+  InitializationAHP();
+
+  void
+  DijkstraBasedClassificationAHP();
+
   void
   SetSourceImage(const std::vector<SrcPixelType> & imSrc);
   void
@@ -61,19 +72,13 @@ public:
   SetWorkMode(bool bSegInitialized = false);
   void
   SetImageSize(const std::vector<long> & imSize);
-  void
-  DoSegmentation();
+
   void
   GetLabelImage(std::vector<LabPixelType> & imLab);
   void
   GetForegroundmage(std::vector<LabPixelType> & imFgrd);
 
 private:
-  void
-  InitializationAHP();
-  void
-  DijkstraBasedClassificationAHP();
-
   std::vector<SrcPixelType> m_imSrc;
   std::vector<LabPixelType> m_imSeed;
   std::vector<LabPixelType> m_imLabPre;
@@ -86,7 +91,7 @@ private:
   std::vector<int>           m_indOff;
   std::vector<unsigned char> m_NBSIZE;
 
-  FibHeap                  m_heap;
+  FibHeap *                m_Heap;
   std::vector<FibHeapNode> m_hpNodes;
   bool                     m_bSegInitialized{ false };
 };

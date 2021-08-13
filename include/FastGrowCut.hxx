@@ -58,10 +58,10 @@ FastGrowCut<SrcPixelType, LabPixelType>::SetSeedlImage(std::vector<LabPixelType>
 
 template <typename SrcPixelType, typename LabPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::SetWorkMode(bool bSegUnInitialized)
+FastGrowCut<SrcPixelType, LabPixelType>::SetWorkMode(bool initialized)
 {
 
-  m_bSegInitialized = bSegUnInitialized;
+  m_bSegInitialized = initialized;
 }
 template <typename SrcPixelType, typename LabPixelType>
 void
@@ -266,12 +266,21 @@ FastGrowCut<SrcPixelType, LabPixelType>::DijkstraBasedClassificationAHP()
 
 template <typename SrcPixelType, typename LabPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::DoSegmentation()
+FastGrowCut<SrcPixelType, LabPixelType>::Reset()
 {
-
-  InitializationAHP();
-
-  DijkstraBasedClassificationAHP();
+  if (m_Heap != nullptr)
+  {
+    delete m_Heap;
+    m_Heap = nullptr;
+  }
+  if (m_HeapNodes != nullptr)
+  {
+    delete[] m_HeapNodes;
+    m_HeapNodes = nullptr;
+  }
+  m_bSegInitialized = false;
+  //m_DistanceVolume->Initialize();
+  //m_ResultLabelVolume->Initialize();
 }
 
 template <typename SrcPixelType, typename LabPixelType>

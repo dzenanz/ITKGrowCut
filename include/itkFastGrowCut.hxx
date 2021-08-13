@@ -111,7 +111,8 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateData()
   m_fastGC->SetWorkMode(m_InitializationFlag);
 
   // Do Segmentation
-  m_fastGC->DoSegmentation();
+  m_fastGC->InitializationAHP();
+  m_fastGC->DijkstraBasedClassificationAHP();
   m_fastGC->GetLabelImage(m_imLabVec);
 
   // Update result. SB: Seed volume is replaced with grow cut result
@@ -153,6 +154,14 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateInputRequestedRegion()
     InputImagePointer input = const_cast<TInputImage *>(this->GetInput());
     input->SetRequestedRegionToLargestPossibleRegion();
   }
+}
+
+template <typename TInputImage, typename TLabelImage>
+void
+FastGrowCut<TInputImage, TLabelImage>::Reset()
+{
+  m_fastGC->Reset();
+  this->SetInitializationFlag(false);
 }
 
 template <typename TInputImage, typename TLabelImage>

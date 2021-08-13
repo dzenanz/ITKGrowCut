@@ -19,9 +19,10 @@
 #ifndef itkFastGrowCut_h
 #define itkFastGrowCut_h
 
+#include <limits>
 #include <memory>
 
-#include "FastGrowCut.h"
+#include "FibHeap.h"
 
 #include "itkImageToImageFilter.h"
 
@@ -52,7 +53,7 @@ namespace itk
  * \ingroup GrowCut
  *
  */
-template <typename TInputImage, typename TLabelImage>
+template <typename TInputImage, typename TLabelImage, typename TMaskImage = TLabelImage>
 class ITK_TEMPLATE_EXPORT FastGrowCut : public ImageToImageFilter<TInputImage, TLabelImage>
 {
 public:
@@ -82,6 +83,9 @@ public:
   using LabelImagePointer = typename LabelImageType::Pointer;
   using LabelImageRegionType = typename LabelImageType::RegionType;
   using LabelImagePixelType = typename LabelImageType::PixelType;
+
+  using MaskImageType = TMaskImage;
+  using MaskPixelType = typename MaskImageType::PixelType;
 
   using SeedsContainerType = std::vector<IndexType>;
 
@@ -128,14 +132,14 @@ public:
    * for region growing either (growing will not start from or cross through masked region).
    */
   void
-  SetMaskImage(const LabelImageType * maskImage)
+  SetMaskImage(const MaskImageType * maskImage)
   {
-    this->SetNthInput(2, const_cast<LabelImageType *>(maskImage));
+    this->SetNthInput(2, const_cast<MaskImageType *>(maskImage));
   }
-  const LabelImageType *
+  const MaskImageType *
   GetMaskImage()
   {
-    return static_cast<const LabelImageType *>(this->ProcessObject::GetInput(2));
+    return static_cast<const MaskImageType *>(this->ProcessObject::GetInput(2));
   }
 
   void
@@ -146,14 +150,22 @@ public:
   // Begin concept checking
   static_assert(TInputImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
   static_assert(TLabelImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
+  static_assert(TMaskImage::ImageDimension == 3, "FastGrowCut only works with 3D images");
   itkConceptMacro(InputHasNumericTraitsCheck, (Concept::HasNumericTraits<InputImagePixelType>));
   itkConceptMacro(OutputHasNumericTraitsCheck, (Concept::HasNumericTraits<LabelImagePixelType>));
+  itkConceptMacro(MaskHasNumericTraitsCheck, (Concept::HasNumericTraits<MaskImagePixelType>));
   // End concept checking
 #endif
 
 protected:
   FastGrowCut() = default;
   ~FastGrowCut() = default;
+
+  constexpr NodeKeyValueType DIST_INF = std::numeric_limits<float>::max();
+  constexpr NodeKeyValueType DIST_EPSILON = 1e-3f;
+  constexpr unsigned char    NNGBH = 26;
+  using DistancePixelType = float;
+  using DistanceImageType = itk::Image<DistancePixelType, 3>;
 
   // Override since the filter needs all the data for the algorithm
   void
@@ -165,16 +177,31 @@ protected:
 
   using InternalFGCType = FGC::FastGrowCut<InputImagePixelType, LabelPixelType>;
 
+
+  bool
+  InitializationAHP(double distancePenalty);
+
+  void
+  DijkstraBasedClassificationAHP();
+
+  bool
+  ExecuteGrowCut(double distancePenalty);
+
 private:
-  std::vector<LabelPixelType>      m_imSeedVec;
-  std::vector<LabelPixelType>      m_imLabVec;
-  std::vector<InputImagePixelType> m_imSrcVec;
-  std::vector<long>                m_imROI;
+  typename DistanceImageType::Pointer m_DistanceVolume = DistanceImageType::New();
 
-  std::shared_ptr<InternalFGCType> m_fastGC = std::make_shared<InternalFGCType>();
+  NodeIndexType m_DimX;
+  NodeIndexType m_DimY;
+  NodeIndexType m_DimZ;
 
-  bool   m_InitializationFlag = false;
-  double m_DistancePenalty = 0.0;
+  std::vector<NodeIndexType> m_NeighborIndexOffsets;
+  std::vector<double>        m_NeighborDistancePenalties;
+  std::vector<unsigned char> m_NumberOfNeighbors; // same everywhere except at the image boundary
+
+  FibHeap *     m_Heap{ nullptr };
+  FibHeapNode * m_HeapNodes{ nullptr }; // a node is stored for each voxel
+  bool          m_bSegInitialized{ false };
+  double        m_DistancePenalty{ 0.0 };
 };
 } // namespace itk
 

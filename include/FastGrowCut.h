@@ -41,15 +41,18 @@
 
 #include "FibHeap.h"
 
+#include "itkImage.h"
+
 namespace FGC
 {
 
-const float         DIST_INF = std::numeric_limits<float>::max();
-const float         DIST_EPSILON = 1e-3f;
-const unsigned char NNGBH = 26;
-typedef float       FPixelType;
+const NodeKeyValueType DIST_INF = std::numeric_limits<float>::max();
+const NodeKeyValueType DIST_EPSILON = 1e-3f;
+const unsigned char    NNGBH = 26;
+using DistancePixelType = float;
 
-template <typename SrcPixelType, typename LabPixelType>
+
+template <typename IntensityPixelType, typename LabelPixelType>
 class FastGrowCut
 {
 public:
@@ -58,42 +61,33 @@ public:
   void
   Reset();
 
-  void
-  InitializationAHP();
+  bool
+  InitializationAHP(double distancePenalty);
 
   void
   DijkstraBasedClassificationAHP();
 
-  void
-  SetSourceImage(const std::vector<SrcPixelType> & imSrc);
-  void
-  SetSeedlImage(std::vector<LabPixelType> & imSeed);
-  void
-  SetWorkMode(bool bSegInitialized = false);
-  void
-  SetImageSize(const std::vector<long> & imSize);
+  bool
+  ExecuteGrowCut(double distancePenalty);
 
-  void
-  GetLabelImage(std::vector<LabPixelType> & imLab);
-  void
-  GetForegroundmage(std::vector<LabPixelType> & imFgrd);
+  using LabelImageType = itk::Image<LabelPixelType, 3>;
+  using DistanceImageType = itk::Image<DistancePixelType, 3>;
 
-private:
-  std::vector<SrcPixelType> m_imSrc;
-  std::vector<LabPixelType> m_imSeed;
-  std::vector<LabPixelType> m_imLabPre;
-  std::vector<FPixelType>   m_imDistPre;
-  std::vector<LabPixelType> m_imLab;
-  std::vector<FPixelType>   m_imDist;
+  typename LabelImageType::Pointer    m_ResultLabelVolume = LabelImageType::New();
+  typename DistanceImageType::Pointer m_DistanceVolume = DistanceImageType::New();
 
-  std::vector<long>          m_imSize;
-  long                       m_DIMX{ 0 }, m_DIMY{ 0 }, m_DIMZ{ 0 }, m_DIMXY{ 0 }, m_DIMXYZ{ 0 };
-  std::vector<int>           m_indOff;
-  std::vector<unsigned char> m_NBSIZE;
+  NodeIndexType m_DimX;
+  NodeIndexType m_DimY;
+  NodeIndexType m_DimZ;
 
-  FibHeap *                m_Heap;
-  std::vector<FibHeapNode> m_hpNodes;
-  bool                     m_bSegInitialized{ false };
+  std::vector<NodeIndexType> m_NeighborIndexOffsets;
+  std::vector<double>        m_NeighborDistancePenalties;
+  std::vector<unsigned char> m_NumberOfNeighbors; // same everywhere except at the image boundary
+
+  FibHeap *     m_Heap{ nullptr };
+  FibHeapNode * m_HeapNodes{ nullptr }; // a node is stored for each voxel
+  bool          m_bSegInitialized{ false };
+  double        m_DistancePenalty{ 0.0 };
 };
 } // end namespace FGC
 

@@ -40,40 +40,28 @@
 namespace FGC
 {
 
-template <typename SrcPixelType, typename LabPixelType>
+template <typename IntensityPixelType, typename LabelPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::SetSourceImage(const std::vector<SrcPixelType> & imSrc)
+FastGrowCut<IntensityPixelType, LabelPixelType>::Reset()
 {
-
-  m_imSrc = imSrc;
+  if (m_Heap != nullptr)
+  {
+    delete m_Heap;
+    m_Heap = nullptr;
+  }
+  if (m_HeapNodes != nullptr)
+  {
+    delete[] m_HeapNodes;
+    m_HeapNodes = nullptr;
+  }
+  m_bSegInitialized = false;
+  m_DistanceVolume = DistanceImageType::New();
+  m_ResultLabelVolume = LabelImageType::New();
 }
 
-template <typename SrcPixelType, typename LabPixelType>
-void
-FastGrowCut<SrcPixelType, LabPixelType>::SetSeedlImage(std::vector<LabPixelType> & imSeed)
-{
-
-  m_imSeed = imSeed;
-}
-
-template <typename SrcPixelType, typename LabPixelType>
-void
-FastGrowCut<SrcPixelType, LabPixelType>::SetWorkMode(bool initialized)
-{
-
-  m_bSegInitialized = initialized;
-}
-template <typename SrcPixelType, typename LabPixelType>
-void
-FastGrowCut<SrcPixelType, LabPixelType>::SetImageSize(const std::vector<long> & imSize)
-{
-
-  m_imSize = imSize;
-}
-
-template <typename SrcPixelType, typename LabPixelType>
-void
-FastGrowCut<SrcPixelType, LabPixelType>::InitializationAHP()
+template <typename IntensityPixelType, typename LabelPixelType>
+bool
+FastGrowCut<IntensityPixelType, LabelPixelType>::InitializationAHP(double distancePenalty)
 {
 
   m_DIMX = m_imSize[0];
@@ -157,16 +145,16 @@ FastGrowCut<SrcPixelType, LabPixelType>::InitializationAHP()
   }
 }
 
-template <typename SrcPixelType, typename LabPixelType>
+template <typename IntensityPixelType, typename LabelPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::DijkstraBasedClassificationAHP()
+FastGrowCut<IntensityPixelType, LabelPixelType>::DijkstraBasedClassificationAHP()
 {
 
-  FibHeapNode *hnMin, hnTmp;
-  float        t, tOri, tSrc;
-  long         i, index, indexNgbh;
-  LabPixelType labSrc;
-  SrcPixelType pixCenter;
+  FibHeapNode *      hnMin, hnTmp;
+  float              t, tOri, tSrc;
+  long               i, index, indexNgbh;
+  LabelPixelType     labSrc;
+  IntensityPixelType pixCenter;
 
   // Insert 0 then extract it, which will balance heap
   m_heap.Insert(&hnTmp);
@@ -264,37 +252,28 @@ FastGrowCut<SrcPixelType, LabPixelType>::DijkstraBasedClassificationAHP()
   m_hpNodes.clear();
 }
 
-template <typename SrcPixelType, typename LabPixelType>
-void
-FastGrowCut<SrcPixelType, LabPixelType>::Reset()
+template <typename IntensityPixelType, typename LabelPixelType>
+bool
+FastGrowCut<IntensityPixelType, LabelPixelType>::ExecuteGrowCut(double distancePenalty)
 {
-  if (m_Heap != nullptr)
-  {
-    delete m_Heap;
-    m_Heap = nullptr;
-  }
-  if (m_HeapNodes != nullptr)
-  {
-    delete[] m_HeapNodes;
-    m_HeapNodes = nullptr;
-  }
-  m_bSegInitialized = false;
-  //m_DistanceVolume->Initialize();
-  //m_ResultLabelVolume->Initialize();
+  LabelImageType::RegionType region = m_ResultLabelVolume->GetBufferedRegion();
+  LabelImageType::SpacingType spacing = 
+  return false;
 }
 
-template <typename SrcPixelType, typename LabPixelType>
+
+template <typename IntensityPixelType, typename LabelPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::GetLabelImage(std::vector<LabPixelType> & imLab)
+FastGrowCut<IntensityPixelType, LabelPixelType>::GetLabelImage(std::vector<LabelPixelType> & imLab)
 {
 
   imLab.resize(m_DIMXYZ);
   std::copy(m_imLab.begin(), m_imLab.end(), imLab.begin());
 }
 
-template <typename SrcPixelType, typename LabPixelType>
+template <typename IntensityPixelType, typename LabelPixelType>
 void
-FastGrowCut<SrcPixelType, LabPixelType>::GetForegroundmage(std::vector<LabPixelType> & imFgrd)
+FastGrowCut<IntensityPixelType, LabelPixelType>::GetForegroundmage(std::vector<LabelPixelType> & imFgrd)
 {
 
   long index;

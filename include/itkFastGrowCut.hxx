@@ -56,9 +56,9 @@ ExtractITKImageROI(const itk::Image<PixelType, 3> * im,
 
 namespace itk
 {
-template <typename TInputImage, typename TLabelImage>
+template <typename TInputImage, typename TLabelImage, typename TMaskImage>
 void
-FastGrowCut<TInputImage, TLabelImage>::GenerateData()
+FastGrowCut<TInputImage, TLabelImage, TMaskImage>::GenerateData()
 {
   using RegionType = typename TInputImage::RegionType;
 
@@ -81,7 +81,7 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateData()
     typename ImageMask::Pointer maskSO = ImageMask::New();
     maskSO->SetImage(outputImage);
     RegionType bbRegion = maskSO->ComputeMyBoundingBoxInIndexSpace();
-    bbRegion.PadByRadius(17); // expand it by some padding radius
+    bbRegion.PadByRadius(17);                             // expand it by some padding radius
     bbRegion.Crop(seedImage->GetLargestPossibleRegion()); // clip it to the original image size
 
     // copy ROI to vector
@@ -111,7 +111,7 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateData()
   m_fastGC->SetWorkMode(m_InitializationFlag);
 
   // Do Segmentation
-  m_fastGC->InitializationAHP();
+  m_fastGC->InitializationAHP(m_DistancePenalty);
   m_fastGC->DijkstraBasedClassificationAHP();
   m_fastGC->GetLabelImage(m_imLabVec);
 
@@ -136,17 +136,17 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateData()
   }
 }
 
-template <typename TInputImage, typename TLabelImage>
+template <typename TInputImage, typename TLabelImage, typename TMaskImage>
 void
-FastGrowCut<TInputImage, TLabelImage>::EnlargeOutputRequestedRegion(DataObject * output)
+FastGrowCut<TInputImage, TLabelImage, TMaskImage>::EnlargeOutputRequestedRegion(DataObject * output)
 {
   Superclass::EnlargeOutputRequestedRegion(output);
   output->SetRequestedRegionToLargestPossibleRegion();
 }
 
-template <typename TInputImage, typename TLabelImage>
+template <typename TInputImage, typename TLabelImage, typename TMaskImage>
 void
-FastGrowCut<TInputImage, TLabelImage>::GenerateInputRequestedRegion()
+FastGrowCut<TInputImage, TLabelImage, TMaskImage>::GenerateInputRequestedRegion()
 {
   Superclass::GenerateInputRequestedRegion();
   if (this->GetInput())
@@ -156,25 +156,12 @@ FastGrowCut<TInputImage, TLabelImage>::GenerateInputRequestedRegion()
   }
 }
 
-template <typename TInputImage, typename TLabelImage>
-void
-FastGrowCut<TInputImage, TLabelImage>::Reset()
-{
-  m_fastGC->Reset();
-  this->SetInitializationFlag(false);
-}
 
-template <typename TInputImage, typename TLabelImage>
+template <typename TInputImage, typename TLabelImage, typename TMaskImage>
 void
-FastGrowCut<TInputImage, TLabelImage>::PrintSelf(std::ostream & os, Indent indent) const
+FastGrowCut<TInputImage, TLabelImage, TMaskImage>::PrintSelf(std::ostream & os, Indent indent) const
 {
   Superclass::PrintSelf(os, indent);
-  using namespace itk::print_helper;
-  os << indent << "InitializationFlag: " << m_InitializationFlag << std::endl;
-  os << indent << "imSeedVec: " << m_imSeedVec << std::endl;
-  os << indent << "imLabVec: " << m_imLabVec << std::endl;
-  os << indent << "imSrcVec: " << m_imSrcVec << std::endl;
-  os << indent << "imROI: " << m_imROI << std::endl;
   os << indent << "FastGC: " << m_fastGC.get() << std::endl;
 }
 

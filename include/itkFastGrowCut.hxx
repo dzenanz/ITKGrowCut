@@ -93,7 +93,6 @@ FastGrowCut<TInputImage, TLabelImage, TMaskImage>::InitializationAHP()
   m_Heap->SetHeapNodes(m_HeapNodes);
 
   const LabelPixelType * seedLabelVolumePtr = seedLabelVolume->GetBufferPointer();
-  const MaskPixelType *  maskLabelVolumePtr = maskLabelVolume->GetBufferPointer();
 
   if (!m_bSegInitialized)
   {
@@ -156,7 +155,7 @@ FastGrowCut<TInputImage, TLabelImage, TMaskImage>::InitializationAHP()
       }
     }
 
-    if (!maskLabelVolumePtr)
+    if (!maskLabelVolume)
     {
       // no mask
       for (NodeIndexType index = 0; index < dimXYZ; index++)
@@ -180,6 +179,7 @@ FastGrowCut<TInputImage, TLabelImage, TMaskImage>::InitializationAHP()
     else
     {
       // with mask
+      const MaskPixelType * maskLabelVolumePtr = maskLabelVolume->GetBufferPointer();
       for (NodeIndexType index = 0; index < dimXYZ; index++)
       {
         if (maskLabelVolumePtr[index] != 0)
